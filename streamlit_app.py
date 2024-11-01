@@ -177,7 +177,6 @@ def render_dashboard(df, metric):
         color_col='Opportunity Owner'
     )
     selected_salesperson = plotly_events(fig_revenue_salesperson, click_event=True)
-
     st.markdown("### 📝 Related Opportunities")
     if selected_salesperson:
         salesperson_name = selected_salesperson[0]['x']
@@ -187,9 +186,9 @@ def render_dashboard(df, metric):
         if not related_opps.empty:
             related_opps = related_opps[['Opportunity Name', 'Opportunity Owner', 'Fiscal Period', 'Amount', 'Expected Revenue', 'Close Date', 'Age', 'Stage', 'Probability (%)']]
             gb = GridOptionsBuilder.from_dataframe(related_opps)
-            gb.configure_default_column(editable=False, sortable=True, filter=True)
+            gb.configure_default_column(editable=False, sortable=True, filter=True, wrapText=True, autoHeight=True, width=75)
             gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
+            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)  # Fit columns initially
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
