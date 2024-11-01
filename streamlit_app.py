@@ -185,7 +185,7 @@ def render_dashboard(df, metric):
         st.session_state['selection_value'] = salesperson_name
         related_opps = df[df['Opportunity Owner'] == salesperson_name]
         if not related_opps.empty:
-            related_opps = related_opps[['Opportunity Name', 'Opportunity Owner', 'Fiscal Period', 'Amount', 'Expected Revenue', 'Close Date', 'Probability (%)']]
+            related_opps = related_opps[['Opportunity Name', 'Opportunity Owner', 'Fiscal Period', 'Amount', 'Expected Revenue', 'Close Date', 'Age', 'Stage', 'Probability (%)']]
             gb = GridOptionsBuilder.from_dataframe(related_opps)
             gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
