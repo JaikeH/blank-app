@@ -178,7 +178,7 @@ def render_dashboard(df, metric):
     )
     selected_salesperson = plotly_events(fig_revenue_salesperson, click_event=True)
     st.markdown("### 📝 Related Opportunities")
-    if selected_salesperson:
+    if selected_salesperson:  # Assuming this is inside a block
         salesperson_name = selected_salesperson[0]['x']
         st.session_state['selection_type'] = 'Salesperson'
         st.session_state['selection_value'] = salesperson_name
@@ -188,11 +188,11 @@ def render_dashboard(df, metric):
             gb = GridOptionsBuilder.from_dataframe(related_opps)
             gb.configure_default_column(editable=False, sortable=True, filter=True, wrapText=True, autoHeight=True, width=75)
             gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions,width='800', height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
+            AgGrid(related_opps, gridOptions=gridOptions, width='800', height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
         else:
-                st.write("No opportunities found for the selected Salesperson.")
-        else:
-            st.write("Click on a bar in the chart to view related opportunities.")
+            st.write("No opportunities found for the selected Salesperson.")
+    else:
+        st.write("Click on a bar in the chart to view related opportunities.")
 
     st.markdown("---")
 
