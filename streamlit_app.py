@@ -188,8 +188,23 @@ def render_dashboard(df, metric):
             gb = GridOptionsBuilder.from_dataframe(related_opps)
             gb.configure_default_column(editable=False, sortable=True, filter=True, wrapText=True, autoHeight=True, width=75)
             gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)  # Fit columns initially
-        else:
+           with st.container():
+    AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
+
+    st.markdown(
+        """
+        <style>
+        .st-container {
+            width: 100%; /* Adjust as needed */
+        }
+        .ag-root-wrapper {
+            width: 100%;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
         st.write("Click on a bar in the chart to view related opportunities.")
