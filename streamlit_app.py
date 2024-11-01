@@ -189,10 +189,10 @@ def render_dashboard(df, metric):
             gb.configure_default_column(editable=False, sortable=True, filter=True, wrapText=True, autoHeight=True, width=75)
             gridOptions = gb.build()
             AgGrid(related_opps, gridOptions=gridOptions,width='800', height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
-    else:
-            st.write("No opportunities found for the selected Salesperson.")
-    else:
-        st.write("Click on a bar in the chart to view related opportunities.")
+        else:
+                st.write("No opportunities found for the selected Salesperson.")
+        else:
+            st.write("Click on a bar in the chart to view related opportunities.")
 
     st.markdown("---")
 
