@@ -355,8 +355,8 @@ def main():
                 ]
                 filtered_df = filtered_df[filtered_df['Stage'] != 'Won']
 
+                create_dashboard(df)
                 render_dashboard(filtered_df, metric)
-                create_dashboard(df) 
             else:
                 st.error("❌ No data available after processing. Please check your uploaded files.")
     else:
