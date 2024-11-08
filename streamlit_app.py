@@ -22,12 +22,12 @@ def load_and_preprocess_data(uploaded_files):
     for f in uploaded_files:
         try:
             if f.name.endswith('.xlsx'):
-            xls = pd.ExcelFile(f)
-            df = pd.read_excel(xls)  # Read the first sheet by default
+                xls = pd.ExcelFile(f)
+                df = pd.read_excel(xls)  # Read the first sheet by default
             elif f.name.endswith('.csv'):
                 df = pd.read_csv(f)
             else:
-                st.error(f"Unsupported file format: {f.name}. Please uploa,d an Excel (.xlsx) or CSV (.csv) file.")
+                st.error(f"Unsupported file format: {f.name}. Please upload an Excel (.xlsx) or CSV (.csv) file.")
                 continue
 
             required_columns = [
