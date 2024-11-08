@@ -21,8 +21,14 @@ def load_and_preprocess_data(uploaded_files):
     data_frames = []
     for f in uploaded_files:
         try:
+            if f.name.endswith('.xlsx'):
             xls = pd.ExcelFile(f)
-            df = pd.read_excel(xls, sheet_name='Cyber Risk Opp Review')
+            df = pd.read_excel(xls)  # Read the first sheet by default
+            elif f.name.endswith('.csv'):
+                df = pd.read_csv(f)
+            else:
+                st.error(f"Unsupported file format: {f.name}. Please upload an Excel (.xlsx) or CSV (.csv) file.")
+                continue
 
             required_columns = [
                 'Created Date', 'Close Date', 'Expected Revenue', 'Amount',
@@ -268,7 +274,7 @@ def render_dashboard(df, metric):
 def main():
     st.sidebar.title("📁 File Upload & Filters")
     uploaded_files = st.sidebar.file_uploader(
-        "Upload one or more Excel files",
+        "Upload one or more Excel (.xlsx) or CSV (.csv) files",
         type=["xlsx"],
         accept_multiple_files=True,
         key='file_uploader_1'
