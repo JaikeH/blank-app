@@ -256,7 +256,32 @@ def render_dashboard(df, metric):
         st.write("✅ No stale opportunities found based on current data.")
 
     st.markdown("---")
+# --- Dashboard ---
+    def create_dashboard(df):
+        st.title("Sales Opportunity Dashboard")
 
+        # Calculate key metrics
+        total_amount = df['Amount'].sum()
+        total_expected_revenue = df['Expected Revenue'].sum()
+        total_likely_revenue = df['Likely Revenue'].sum()
+        avg_probability = df['Probability (%)'].mean() * 100 
+        num_opportunities = len(df)
+
+        # Create dashboard columns
+        col1, col2, col3, col4 = st.columns(4) 
+
+        # Display metrics in columns
+        with col1:
+            st.metric("Total Amount", f"${total_amount:,.0f}")
+        with col2:
+            st.metric("Expected Revenue", f"${total_expected_revenue:,.0f}")
+        with col3:
+            st.metric("Likely Revenue", f"${total_likely_revenue:,.0f}")
+        with col4:
+            st.metric("Avg. Probability", f"{avg_probability:.1f}%") 
+            st.metric("Total Opportunities", num_opportunities)
+
+        st.markdown("---")  # Separator
     # --- Download Button ---
     @st.cache_data
     def convert_df_to_csv(df):
