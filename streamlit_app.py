@@ -25,7 +25,7 @@ def load_and_preprocess_data(uploaded_files):
                 xls = pd.ExcelFile(f)
                 df = pd.read_excel(xls)  # Read the first sheet by default
             elif f.name.endswith('.csv'):
-                df = pd.read_csv(f)
+                df = pd.read_csv(f, encoding='utf-8', encoding_errors='replace')  # or 'latin1', or 'iso-8859-1', etc.
             else:
                 st.error(f"Unsupported file format: {f.name}. Please upload an Excel (.xlsx) or CSV (.csv) file.")
                 continue
@@ -275,7 +275,7 @@ def main():
     st.sidebar.title("📁 File Upload & Filters")
     uploaded_files = st.sidebar.file_uploader(
         "Upload one or more Excel (.xlsx) or CSV (.csv) files",
-        type=["xlsx"],
+        type=["xlsx", "csv"],
         accept_multiple_files=True,
         key='file_uploader_1'
     )
