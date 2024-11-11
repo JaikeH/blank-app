@@ -23,9 +23,9 @@ def load_and_preprocess_data(uploaded_files):
         try:
             if f.name.endswith('.xlsx'):
                 xls = pd.ExcelFile(f)
-                df = pd.read_excel(xls)  # Read the first sheet by default
+                df = pd.read_excel(xls)
             elif f.name.endswith('.csv'):
-                df = pd.read_csv(f, encoding='utf-8', encoding_errors='replace')  # or 'latin1', or 'iso-8859-1', etc.
+                df = pd.read_csv(f, encoding='utf-8', encoding_errors='replace')
             else:
                 st.error(f"Unsupported file format: {f.name}. Please upload an Excel (.xlsx) or CSV (.csv) file.")
                 continue
@@ -43,9 +43,9 @@ def load_and_preprocess_data(uploaded_files):
             # Data processing
             df['Created Date'] = pd.to_datetime(df['Created Date'], errors='coerce')
             df['Close Date'] = pd.to_datetime(df['Close Date'], errors='coerce')
-            df['Probability (%)'] = pd.to_numeric(df['Probability (%)'], errors='coerce') / 100  # Convert to decimal
+            df['Probability (%)'] = pd.to_numeric(df['Probability (%)'], errors='coerce') / 100
             df['Likely Revenue'] = df['Expected Revenue'] * df['Probability (%)']
-            df['File Name'] = f.name  # Track file source
+            df['File Name'] = f.name
             data_frames.append(df)
         except Exception as e:
             st.error(f"Error loading {f.name}: {e}")
@@ -79,8 +79,7 @@ def create_bar_chart(df, x_col, y_col, title, labels, color_col=None, orientatio
             labels=labels,
             color_discrete_sequence=px.colors.qualitative.Plotly
         )
-
-    fig.update_layout(showlegend=False, clickmode='event+select')  # Remove legend
+    fig.update_layout(showlegend=False, clickmode='event+select')
     fig.update_traces(marker_line_width=1.5, opacity=0.8)
     return fig
 
@@ -98,7 +97,7 @@ def render_dashboard(df, metric):
 
     # Top 10 for Salesperson and Client
     count_salesperson_top = count_salesperson.sort_values('Count', ascending=False).head(10)
-    count_fiscal_sorted = count_fiscal.sort_values('Fiscal Period')  # Chronological order
+    count_fiscal_sorted = count_fiscal.sort_values('Fiscal Period')
     count_client_top = count_client.sort_values('Count', ascending=False).head(10)
 
     # Create three columns for counts
@@ -156,8 +155,6 @@ def render_dashboard(df, metric):
     st.markdown("### 📝 Related Opportunities")
     if selected_fiscal:
         fiscal_period = selected_fiscal[0]['x']
-        st.session_state['selection_type'] = 'Fiscal Period'
-        st.session_state['selection_value'] = fiscal_period
         related_opps = df[df['Fiscal Period'] == fiscal_period]
         if not related_opps.empty:
             gb = GridOptionsBuilder.from_dataframe(related_opps)
@@ -183,18 +180,16 @@ def render_dashboard(df, metric):
         color_col='Opportunity Owner'
     )
     selected_salesperson = plotly_events(fig_revenue_salesperson, click_event=True)
+
     st.markdown("### 📝 Related Opportunities")
-    if selected_salesperson:  # Assuming this is inside a block
+    if selected_salesperson:
         salesperson_name = selected_salesperson[0]['x']
-        st.session_state['selection_type'] = 'Salesperson'
-        st.session_state['selection_value'] = salesperson_name
         related_opps = df[df['Opportunity Owner'] == salesperson_name]
         if not related_opps.empty:
-            related_opps = related_opps[['Opportunity Name', 'Opportunity Owner', 'Fiscal Period', 'Amount', 'Expected Revenue', 'Close Date', 'Age', 'Stage', 'Probability (%)']]
             gb = GridOptionsBuilder.from_dataframe(related_opps)
-            gb.configure_default_column(editable=False, sortable=True, filter=True, wrapText=True, autoHeight=True, width=75)
+            gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, width='800', height=400, allow_unsafe_jscode=True, fit_columns_on_grid_load=True)
+            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
@@ -224,8 +219,6 @@ def render_dashboard(df, metric):
     st.markdown("### 📝 Related Opportunities")
     if selected_client:
         client_name = selected_client[0]['x']
-        st.session_state['selection_type'] = 'Client'
-        st.session_state['selection_value'] = client_name
         related_opps = df[df['Account Name'] == client_name]
         if not related_opps.empty:
             gb = GridOptionsBuilder.from_dataframe(related_opps)
@@ -241,7 +234,6 @@ def render_dashboard(df, metric):
 
     # --- Stale Opportunity Detection ---
     st.header("⏳ Stale Opportunities Needing Attention")
-    # Exclude "Won" and "Lost"
     stale_opps = df[
         (df['Age'] > 180) &
         (~df['Stage'].isin(['Won', 'Lost']))
@@ -256,44 +248,11 @@ def render_dashboard(df, metric):
         st.write("✅ No stale opportunities found based on current data.")
 
     st.markdown("---")
-# --- Dashboard ---
-    def create_dashboard(df):
-        st.title("Sales Opportunity Dashboard")
 
-        # Calculate key metrics
-        total_amount = df['Amount'].sum()
-        total_expected_revenue = df['Expected Revenue'].sum()
-        total_likely_revenue = df['Likely Revenue'].sum()
-        avg_probability = df['Probability (%)'].mean() * 100 
-        num_opportunities = len(df)
-
-        # Create dashboard columns
-        col1, col2, col3, col4 = st.columns(4) 
-
-        # Display metrics in columns
-        with col1:
-            st.metric("Total Amount", f"${total_amount:,.0f}")
-        with col2:
-            st.metric("Expected Revenue", f"${total_expected_revenue:,.0f}")
-        with col3:
-            st.metric("Likely Revenue", f"${total_likely_revenue:,.0f}")
-        with col4:
-            st.metric("Avg. Probability", f"{avg_probability:.1f}%") 
-            st.metric("Total Opportunities", num_opportunities)
-
-        st.markdown("---")  # Separator
-    # --- Download Button ---
-    @st.cache_data
-    def convert_df_to_csv(df):
-        return df.to_csv(index=False).encode('utf-8')
-
-    csv_filtered = convert_df_to_csv(df)
-    st.download_button(
-        label="📥 Download Filtered Data as CSV",
-        data=csv_filtered,
-        file_name='filtered_opportunities.csv',
-        mime='text/csv',
-    )
+# --- Download Button ---
+@st.cache_data
+def convert_df_to_csv(df):
+    return df.to_csv(index=False).encode('utf-8')
 
 # --- Main App ---
 def main():
@@ -312,10 +271,7 @@ def main():
             if df is not None and not df.empty:
                 st.success(f"✅ Data loaded successfully in {int(time.time() - start_time)} seconds!")
 
-                # --- Sidebar Filters ---
                 st.sidebar.header("🔧 Filters")
-                
-                # Allow user to select the metric for analysis first
                 st.sidebar.header("🔍 Select Metric")
                 available_metrics = ['Expected Revenue', 'Amount', 'Likely Revenue']
                 metric = st.sidebar.selectbox("Choose a metric for analysis:", available_metrics, index=0)
@@ -355,7 +311,6 @@ def main():
                 ]
                 filtered_df = filtered_df[filtered_df['Stage'] != 'Won']
 
-                create_dashboard(filtered_df)
                 render_dashboard(filtered_df, metric)
             else:
                 st.error("❌ No data available after processing. Please check your uploaded files.")
