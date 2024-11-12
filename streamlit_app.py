@@ -225,4 +225,30 @@ def main():
                 )
 
                 min_metric = float(df[metric].min())
-                max_metric = float(df[metric].
+                max_metric = float(df[metric].max())
+                selected_metric_range = st.sidebar.slider(
+                    f"{metric} Range",
+                    min_value=min_metric,
+                    max_value=max_metric,
+                    value=(min_metric, max_metric)
+                )
+
+                # --- Apply Filters ---
+                filtered_df = df[
+                    df['Fiscal Period'].isin(selected_fiscal_period) &
+                    df['Stage'].isin(selected_stage) &
+                    (df['Close Date'] >= pd.to_datetime(selected_date_range[0])) &
+                    (df['Close Date'] <= pd.to_datetime(selected_date_range[1])) &
+                    (df[metric] >= selected_metric_range[0]) &
+                    (df[metric] <= selected_metric_range[1])
+                ]
+                filtered_df = filtered_df[filtered_df['Stage'] != 'Won']
+
+                render_dashboard(filtered_df, metric)
+            else:
+                st.error("❌ No data available after processing. Please check your uploaded files.")
+    else:
+        st.info("📂 Please upload one or more Excel files to get started.")
+
+if __name__ == "__main__":
+    main()
