@@ -103,56 +103,84 @@ def create_bar_chart(df, x_col, y_col, title, labels, color_col=None, orientatio
     fig.update_traces(marker_line_width=1.5, opacity=0.8)
     return fig
 
+# --- High-Level Dashboard Summary ---
+def create_summary_dashboard(df):
+    st.header("🔍 High-Level Metrics Summary")
+
+    # Calculate metrics
+    total_amount = df['Amount'].sum()
+    total_expected_revenue = df['Expected Revenue'].sum()
+    total_likely_revenue = df['Likely Revenue'].sum()
+    avg_probability = df['Probability (%)'].mean() * 100
+    num_opportunities = len(df)
+
+    # Display metrics in columns
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Amount", f"${total_amount:,.0f}")
+    col2.metric("Expected Revenue", f"${total_expected_revenue:,.0f}")
+    col3.metric("Likely Revenue", f"${total_likely_revenue:,.0f}")
+    col4.metric("Average Probability", f"{avg_probability:.1f}%")
+    st.markdown("---")
+
 # --- Dashboard Rendering ---
 def render_dashboard(df, metric):
     st.title("📈 Enhanced Sales Opportunity Dashboard")
 
-    # --- Top Dashboard: Counts by Salesperson, Fiscal Period, Client ---
-    st.header("🔍 Overview Dashboard")
+    # Display High-Level Summary
+    create_summary_dashboard(df)
 
-    # Calculate counts
+    # --- Overview Dashboard by Counts ---
+    st.header("🔍 Opportunities Overview")
     count_salesperson = df.groupby('Opportunity Owner').size().reset_index(name='Count')
     count_fiscal = df.groupby('Fiscal Period').size().reset_index(name='Count')
     count_client = df.groupby('Account Name').size().reset_index(name='Count')
 
-    # Top 10 for Salesperson and Client
-    count_salesperson_top = count_salesperson.sort_values('Count', ascending=False).head(10)
-    count_fiscal_sorted = count_fiscal.sort_values('Fiscal Period')
-    count_client_top = count_client.sort_values('Count', ascending=False).head(10)
-
-    # Create three columns for counts
+    # Display top 10 entries for each category
     overview_col1, overview_col2, overview_col3 = st.columns(3)
-
     with overview_col1:
         st.subheader("👤 Opportunities by Salesperson")
-        st.metric(
-            label="Total Salespersons",
-            value=int(count_salesperson['Opportunity Owner'].nunique()),
-            delta=int(count_salesperson['Count'].sum())
-        )
-        st.table(count_salesperson_top.rename(columns={'Opportunity Owner': 'Salesperson'}))
+        st.table(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}))
 
     with overview_col2:
         st.subheader("📅 Opportunities by Fiscal Period")
-        st.metric(
-            label="Total Fiscal Periods",
-            value=int(count_fiscal['Fiscal Period'].nunique()),
-            delta=int(count_fiscal['Count'].sum())
-        )
-        st.table(count_fiscal_sorted)
+        st.table(count_fiscal)
 
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
-        st.metric(
-            label="Total Clients",
-            value=int(count_client['Account Name'].nunique()),
-            delta=int(count_client['Count'].sum())
-        )
-        st.table(count_client_top.rename(columns={'Account Name': 'Client'}))
+        st.table(count_client.rename(columns={'Account Name': 'Client'}))
 
     st.markdown("---")
 
-    # --- Revenue by Salesperson Chart ---
+    # --- Revenue by Fiscal Period Chart ---
+    st.subheader("💰 Revenue by Fiscal Period")
+    revenue_fiscal = df.groupby('Fiscal Period')[metric].sum().reset_index()
+    fig_revenue_fiscal = create_bar_chart(
+        revenue_fiscal,
+        x_col='Fiscal Period',
+        y_col=metric,
+        title=f"Revenue by Fiscal Period ({metric})",
+        labels={metric: metric, 'Fiscal Period': 'Fiscal Period'},
+        color_col='Fiscal Period'
+    )
+    selected_fiscal = plotly_events(fig_revenue_fiscal, click_event=True)
+
+    st.markdown("### 📝 Related Opportunities")
+    if selected_fiscal:
+        fiscal_period = selected_fiscal[0]['x']
+        related_opps = df[df['Fiscal Period'] == fiscal_period]
+        if not related_opps.empty:
+            gb = GridOptionsBuilder.from_dataframe(related_opps)
+            gb.configure_default_column(editable=False, sortable=True, filter=True)
+            gridOptions = gb.build()
+            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
+        else:
+            st.write("No opportunities found for the selected Fiscal Period.")
+    else:
+        st.write("Click on a bar in the chart to view related opportunities.")
+
+    st.markdown("---")
+
+    # --- Revenue by Salesperson Chart and Email Feature ---
     st.subheader("👤 Revenue by Salesperson")
     revenue_salesperson = df.groupby('Opportunity Owner')[metric].sum().reset_index()
     fig_revenue_salesperson = create_bar_chart(
@@ -165,7 +193,6 @@ def render_dashboard(df, metric):
     )
     selected_salesperson = plotly_events(fig_revenue_salesperson, click_event=True)
 
-    # --- Display Related Opportunities Table and Email Button ---
     st.markdown("### 📝 Related Opportunities")
     if selected_salesperson:
         salesperson_name = selected_salesperson[0]['x']
@@ -187,6 +214,41 @@ def render_dashboard(df, metric):
     else:
         st.write("Click on a bar in the chart to view related opportunities.")
 
+    st.markdown("---")
+
+    # --- Total Expected Revenue by Client Chart ---
+    st.subheader("🏆 Total Expected Revenue by Client (Top 20)")
+    top_clients = (
+        df.groupby('Account Name')[metric]
+        .sum()
+        .reset_index()
+        .sort_values(by=metric, ascending=False)
+        .head(20)
+    )
+    fig_top_clients = create_bar_chart(
+        top_clients,
+        x_col='Account Name',
+        y_col=metric,
+        title=f"Total {metric} by Client",
+        labels={'Account Name': 'Client', metric: metric},
+        color_col='Account Name'
+    )
+    selected_client = plotly_events(fig_top_clients, click_event=True)
+
+    st.markdown("### 📝 Related Opportunities")
+    if selected_client:
+        client_name = selected_client[0]['x']
+        related_opps = df[df['Account Name'] == client_name]
+        if not related_opps.empty:
+            gb = GridOptionsBuilder.from_dataframe(related_opps)
+            gb.configure_default_column(editable=False, sortable=True, filter=True)
+            gridOptions = gb.build()
+            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
+        else:
+            st.write("No opportunities found for the selected Client.")
+    else:
+        st.write("Click on a bar in the chart to view related opportunities.")
+
 # --- Main App ---
 def main():
     st.sidebar.title("📁 File Upload & Filters")
@@ -204,6 +266,7 @@ def main():
             if df is not None and not df.empty:
                 st.success(f"✅ Data loaded successfully in {int(time.time() - start_time)} seconds!")
 
+                # --- Sidebar Filters ---
                 st.sidebar.header("🔧 Filters")
                 st.sidebar.header("🔍 Select Metric")
                 available_metrics = ['Expected Revenue', 'Amount', 'Likely Revenue']
