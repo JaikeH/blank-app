@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 from st_aggrid import AgGrid, GridOptionsBuilder
 from streamlit_plotly_events import plotly_events
+import urllib
 import time
 from datetime import datetime
 
@@ -54,6 +55,25 @@ def load_and_preprocess_data(uploaded_files):
     if not data_frames:
         return None
     return pd.concat(data_frames, ignore_index=True)
+
+# --- Email Body Formatting ---
+def format_salesperson_opportunities_email(filtered_df):
+    body = "Here are the current opportunities for the selected salesperson:\n\n"
+    for index, row in filtered_df.iterrows():
+        body += (
+            f"Client: {row['Account Name']}\n"
+            f"Opportunity: {row['Opportunity Name']}\n"
+            f"Close Date: {row['Close Date']}\n"
+            "------------------------------------------\n"
+        )
+    return body
+
+# --- Generate Mailto Link for Outlook Email ---
+def create_outlook_link_for_salesperson(filtered_df):
+    subject = "Opportunities for Selected Salesperson"
+    body = format_salesperson_opportunities_email(filtered_df)
+    mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
+    return mailto_link
 
 # --- Charting Functions ---
 def create_bar_chart(df, x_col, y_col, title, labels, color_col=None, orientation='v'):
@@ -132,43 +152,7 @@ def render_dashboard(df, metric):
 
     st.markdown("---")
 
-    # --- Charts with Related Opportunities Tables ---
-    # Revenue by Fiscal Period
-    st.subheader("💰 Revenue by Fiscal Period")
-    revenue_fiscal = df.groupby('Fiscal Period')[metric].sum().reset_index()
-    revenue_fiscal['Fiscal Period'] = pd.Categorical(
-        revenue_fiscal['Fiscal Period'],
-        categories=sorted(df['Fiscal Period'].dropna().unique(), key=lambda x: pd.to_datetime(x, errors='ignore')),
-        ordered=True
-    )
-    revenue_fiscal = revenue_fiscal.sort_values('Fiscal Period')
-    fig_revenue_fiscal = create_bar_chart(
-        revenue_fiscal,
-        x_col='Fiscal Period',
-        y_col=metric,
-        title=f"Revenue by Fiscal Period ({metric})",
-        labels={metric: metric, 'Fiscal Period': 'Fiscal Period'},
-        color_col='Fiscal Period'
-    )
-    selected_fiscal = plotly_events(fig_revenue_fiscal, click_event=True)
-
-    st.markdown("### 📝 Related Opportunities")
-    if selected_fiscal:
-        fiscal_period = selected_fiscal[0]['x']
-        related_opps = df[df['Fiscal Period'] == fiscal_period]
-        if not related_opps.empty:
-            gb = GridOptionsBuilder.from_dataframe(related_opps)
-            gb.configure_default_column(editable=False, sortable=True, filter=True)
-            gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
-        else:
-            st.write("No opportunities found for the selected Fiscal Period.")
-    else:
-        st.write("Click on a bar in the chart to view related opportunities.")
-
-    st.markdown("---")
-
-    # Revenue by Salesperson
+    # --- Revenue by Salesperson Chart ---
     st.subheader("👤 Revenue by Salesperson")
     revenue_salesperson = df.groupby('Opportunity Owner')[metric].sum().reset_index()
     fig_revenue_salesperson = create_bar_chart(
@@ -181,78 +165,27 @@ def render_dashboard(df, metric):
     )
     selected_salesperson = plotly_events(fig_revenue_salesperson, click_event=True)
 
+    # --- Display Related Opportunities Table and Email Button ---
     st.markdown("### 📝 Related Opportunities")
     if selected_salesperson:
         salesperson_name = selected_salesperson[0]['x']
-        related_opps = df[df['Opportunity Owner'] == salesperson_name]
-        if not related_opps.empty:
-            gb = GridOptionsBuilder.from_dataframe(related_opps)
+        filtered_df = df[df['Opportunity Owner'] == salesperson_name]
+
+        if not filtered_df.empty:
+            gb = GridOptionsBuilder.from_dataframe(filtered_df[['Opportunity Name', 'Account Name', 'Close Date']])
             gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
+            AgGrid(filtered_df[['Opportunity Name', 'Account Name', 'Close Date']], gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
+
+            # Email button
+            st.header("Send Opportunities via Email")
+            if st.button("Email Salesperson's Opportunities"):
+                outlook_link = create_outlook_link_for_salesperson(filtered_df)
+                st.markdown(f"[Click here to open email in Outlook]({outlook_link})", unsafe_allow_html=True)
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
         st.write("Click on a bar in the chart to view related opportunities.")
-
-    st.markdown("---")
-
-    # Total Expected Revenue by Client (Top 20)
-    st.subheader("🏆 Total Expected Revenue by Client (Top 20)")
-    top_clients = (
-        df.groupby('Account Name')[metric]
-        .sum()
-        .reset_index()
-        .sort_values(by=metric, ascending=False)
-        .head(20)
-    )
-    fig_top_clients = create_bar_chart(
-        top_clients,
-        x_col='Account Name',
-        y_col=metric,
-        title=f"Total {metric} by Client",
-        labels={'Account Name': 'Client', metric: metric},
-        color_col='Account Name'
-    )
-    selected_client = plotly_events(fig_top_clients, click_event=True)
-
-    st.markdown("### 📝 Related Opportunities")
-    if selected_client:
-        client_name = selected_client[0]['x']
-        related_opps = df[df['Account Name'] == client_name]
-        if not related_opps.empty:
-            gb = GridOptionsBuilder.from_dataframe(related_opps)
-            gb.configure_default_column(editable=False, sortable=True, filter=True)
-            gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
-        else:
-            st.write("No opportunities found for the selected Client.")
-    else:
-        st.write("Click on a bar in the chart to view related opportunities.")
-
-    st.markdown("---")
-
-    # --- Stale Opportunity Detection ---
-    st.header("⏳ Stale Opportunities Needing Attention")
-    stale_opps = df[
-        (df['Age'] > 180) &
-        (~df['Stage'].isin(['Won', 'Lost']))
-    ]
-    stale_opps = stale_opps[['Opportunity Name', 'Account Name', 'Stage', metric, 'Age', 'Created Date', 'Close Date']]
-    if not stale_opps.empty:
-        gb = GridOptionsBuilder.from_dataframe(stale_opps)
-        gb.configure_default_column(editable=False, sortable=True, filter=True)
-        gridOptions = gb.build()
-        AgGrid(stale_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
-    else:
-        st.write("✅ No stale opportunities found based on current data.")
-
-    st.markdown("---")
-
-# --- Download Button ---
-@st.cache_data
-def convert_df_to_csv(df):
-    return df.to_csv(index=False).encode('utf-8')
 
 # --- Main App ---
 def main():
@@ -292,30 +225,4 @@ def main():
                 )
 
                 min_metric = float(df[metric].min())
-                max_metric = float(df[metric].max())
-                selected_metric_range = st.sidebar.slider(
-                    f"{metric} Range",
-                    min_value=min_metric,
-                    max_value=max_metric,
-                    value=(min_metric, max_metric)
-                )
-
-                # --- Apply Filters ---
-                filtered_df = df[
-                    df['Fiscal Period'].isin(selected_fiscal_period) &
-                    df['Stage'].isin(selected_stage) &
-                    (df['Close Date'] >= pd.to_datetime(selected_date_range[0])) &
-                    (df['Close Date'] <= pd.to_datetime(selected_date_range[1])) &
-                    (df[metric] >= selected_metric_range[0]) &
-                    (df[metric] <= selected_metric_range[1])
-                ]
-                filtered_df = filtered_df[filtered_df['Stage'] != 'Won']
-
-                render_dashboard(filtered_df, metric)
-            else:
-                st.error("❌ No data available after processing. Please check your uploaded files.")
-    else:
-        st.info("📂 Please upload one or more Excel files to get started.")
-
-if __name__ == "__main__":
-    main()
+                max_metric = float(df[metric].
