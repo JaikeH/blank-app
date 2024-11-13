@@ -156,7 +156,7 @@ def render_dashboard(df, metric):
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
         styled_client_df = count_client.rename(columns={'Account Name': 'Client'}).set_index('Client')
-        st.dataframe(styled_client_df, width=400, height=500)
+        st.dataframe(styled_client_df, width=250, height=500)
 
     with overview_col4:
         st.subheader("⏳ Closing in 30 Days")
