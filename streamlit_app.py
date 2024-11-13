@@ -8,7 +8,6 @@ import time
 from datetime import datetime
 from io import BytesIO
 import base64
-import matplotlib
 import matplotlib.pyplot as plt
 from PIL import Image
 
@@ -61,12 +60,12 @@ def load_and_preprocess_data(uploaded_files):
         return None
     return pd.concat(data_frames, ignore_index=True)
 
-# Convert DataFrame to Base64 image
+# --- Convert DataFrame to Base64 Image ---
 def dataframe_to_base64_image(df):
     # Convert DataFrame to an image
     fig, ax = plt.subplots(figsize=(8, len(df) * 0.25 + 1))  # Adjust height dynamically
     ax.axis('off')
-    ax.table(cellText=df.values, colLabels=df.columns, loc='center')
+    ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
     buf = BytesIO()
     fig.savefig(buf, format="PNG")
     plt.close(fig)
@@ -75,19 +74,8 @@ def dataframe_to_base64_image(df):
     buf.seek(0)
     base64_image = base64.b64encode(buf.read()).decode('utf-8')
     return base64_image
-    
-# --- Email Body Formatting ---
-def format_salesperson_opportunities_email(filtered_df):
-    body = "Here are the current opportunities for the selected salesperson:\n\n"
-    for index, row in filtered_df.iterrows():
-        body += (
-            f"Client: {row['Account Name']}\n"
-            f"Opportunity: {row['Opportunity Name']}\n"
-            f"Close Date: {row['Close Date']}\n"
-            "------------------------------------------\n"
-        )
-    return body
-# Generate Mailto link with Base64 image
+
+# --- Generate Mailto Link with Base64 Image ---
 def create_outlook_link_with_image(filtered_df):
     # Convert DataFrame to Base64 image
     base64_image = dataframe_to_base64_image(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
@@ -95,13 +83,6 @@ def create_outlook_link_with_image(filtered_df):
     
     subject = "Opportunities for Selected Salesperson"
     body = f"Here is an overview of the selected opportunities:\n\n{img_tag}"
-    mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
-    return mailto_link
-
-# --- Generate Mailto Link for Outlook Email ---
-def create_outlook_link_for_salesperson(filtered_df):
-    subject = "Opportunities for Selected Salesperson"
-    body = format_salesperson_opportunities_email(filtered_df)
     mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
     return mailto_link
 
@@ -175,21 +156,21 @@ def render_dashboard(df, metric):
     overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
     
     with overview_col1:
-        st.markdown("<h5>👤 Opportunities by Salesperson</h5>", unsafe_allow_html=True)
-        st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'), width=230, height=500)
+        st.subheader("👤 Opportunities by Salesperson")
+        st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'), width=250, height=500)
 
     with overview_col2:
-        st.markdown("<h5>📅 Opportunities by Fiscal Period</h5>", unsafe_allow_html=True)
-        st.dataframe(count_fiscal.set_index('Fiscal Period'), width=230, height=500)
+        st.subheader("📅 Opportunities by Fiscal Period")
+        st.dataframe(count_fiscal.set_index('Fiscal Period'), width=250, height=500)
 
     with overview_col3:
-        st.markdown("<h5>🏢 Opportunities by Client</h5>", unsafe_allow_html=True)
+        st.subheader("🏢 Opportunities by Client")
         styled_client_df = count_client.rename(columns={'Account Name': 'Client'}).set_index('Client')
-        st.dataframe(styled_client_df, width=300, height=500)
+        st.dataframe(styled_client_df, width=400, height=500)
 
     with overview_col4:
-        st.markdown("<h5>⏳ Closing in 30 Days</h5>", unsafe_allow_html=True)
-        st.dataframe(count_closing_soon.set_index('Opportunity Name'), width=230, height=500)
+        st.subheader("⏳ Closing in 30 Days")
+        st.dataframe(count_closing_soon.set_index('Opportunity Name'), width=250, height=500)
 
     st.markdown("---")
 
@@ -210,21 +191,7 @@ def render_dashboard(df, metric):
         labels={metric: metric, 'Fiscal Period': 'Fiscal Period'},
         color_col='Fiscal Period'
     )
-    selected_fiscal = plotly_events(fig_revenue_fiscal, click_event=True)
-
-    st.markdown("### 📝 Related Opportunities")
-    if selected_fiscal:
-        fiscal_period = selected_fiscal[0]['x']
-        related_opps = df[df['Fiscal Period'] == fiscal_period]
-        if not related_opps.empty:
-            gb = GridOptionsBuilder.from_dataframe(related_opps)
-            gb.configure_default_column(editable=False, sortable=True, filter=True)
-            gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
-        else:
-            st.write("No opportunities found for the selected Fiscal Period.")
-    else:
-        st.write("Click on a bar in the chart to view related opportunities.")
+    st.plotly_chart(fig_revenue_fiscal, use_container_width=True)
 
     st.markdown("---")
 
@@ -252,6 +219,7 @@ def render_dashboard(df, metric):
             gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
             AgGrid(filtered_df, gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
+
             # Email button with Base64 image
             st.header("Send Opportunities via Email")
             outlook_link = create_outlook_link_with_image(filtered_df)
@@ -280,21 +248,9 @@ def render_dashboard(df, metric):
         labels={'Account Name': 'Client', metric: metric},
         color_col='Account Name'
     )
-    selected_client = plotly_events(fig_top_clients, click_event=True)
+    st.plotly_chart(fig_top_clients, use_container_width=True)
 
-    st.markdown("### 📝 Related Opportunities")
-    if selected_client:
-        client_name = selected_client[0]['x']
-        related_opps = df[df['Account Name'] == client_name]
-        if not related_opps.empty:
-            gb = GridOptionsBuilder.from_dataframe(related_opps)
-            gb.configure_default_column(editable=False, sortable=True, filter=True)
-            gridOptions = gb.build()
-            AgGrid(related_opps, gridOptions=gridOptions, height=400, allow_unsafe_jscode=True)
-        else:
-            st.write("No opportunities found for the selected Client.")
-    else:
-        st.write("Click on a bar in the chart to view related opportunities.")
+    st.markdown("---")
 
 # --- Main App ---
 def main():
