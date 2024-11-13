@@ -135,18 +135,28 @@ def render_dashboard(df, metric):
     count_salesperson = df.groupby('Opportunity Owner').size().reset_index(name='Count')
     count_fiscal = df.groupby('Fiscal Period').size().reset_index(name='Count')
     count_client = df.groupby('Account Name').size().reset_index(name='Count').sort_values(by='Count', ascending=False)
+    
+    # Calculate opportunities closing in the next 30 days
+    thirty_days_from_now = datetime.now() + pd.DateOffset(days=30)
+    count_closing_soon = df[df['Close Date'] <= thirty_days_from_now].groupby('Opportunity Name').size().reset_index(name='Count')
 
-    # Display top 10 entries for each category
-    overview_col1, overview_col2, overview_col3 = st.columns(3)
+    # Display top entries for each category
+    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4) 
     with overview_col1:
         st.subheader("👤 Opportunities by Salesperson")
-        st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'), width=33%, height=500)
+        st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'), width=250, height=500)
     with overview_col2:
         st.subheader("📅 Opportunities by Fiscal Period")
-        st.dataframe(count_fiscal.set_index('Fiscal Period'), width=33%, height=500)
+        st.dataframe(count_fiscal.set_index('Fiscal Period'), width=250, height=500)
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
-        st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).set_index('Client').head(25), width=33%, height=500)
+        st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).set_index('Client').head(25), width=250, height=500)  # Increased width
+    with overview_col4:
+        st.subheader("⏳ Closing in 30 Days")
+        st.dataframe(count_closing_soon.set_index('Opportunity Name'), width=250, height=500) 
+
+    st.markdown("---")
+    # ... rest of your render_dashboard function ...
 
     st.markdown("---")
 
