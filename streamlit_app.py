@@ -76,16 +76,6 @@ def create_outlook_link_for_salesperson(filtered_df):
     mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
     return mailto_link
 
-# --- Function to trigger email client directly ---
-def send_email_directly(filtered_df):
-    subject = urllib.parse.quote("Opportunities for Selected Salesperson")
-    body = urllib.parse.quote(format_salesperson_opportunities_email(filtered_df))
-    
-    # Construct the mailto URL
-    href = f"mailto:?subject={subject}&body={body}" 
-
-    st.markdown(f'<a href="{href}">Send Email</a>', unsafe_allow_html=True)
-
 # --- Charting Functions ---
 def create_bar_chart(df, x_col, y_col, title, labels, color_col=None, orientation='v'):
     if color_col:
@@ -158,6 +148,12 @@ def render_dashboard(df, metric):
 
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
+        # Display only top 10 and add scrollbar if more
+        if len(count_client) > 10:
+            st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).head(10), height=250)  # Limit rows to 10
+            # Add a message indicating more rows are available
+            st.write(f"Showing top 10 clients. There are {len(count_client) - 10} more clients.")
+        else:
         st.table(count_client.rename(columns={'Account Name': 'Client'}))
 
     st.markdown("---")
@@ -221,10 +217,6 @@ def render_dashboard(df, metric):
             gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
             AgGrid(filtered_df, gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
-
-            # Email button (only relevant fields in email)
-            st.markdown("### Send Opportunities via Email")
-            send_email_directly(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
