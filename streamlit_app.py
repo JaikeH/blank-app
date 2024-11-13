@@ -150,16 +150,8 @@ def render_dashboard(df, metric):
         st.dataframe(count_fiscal.set_index('Fiscal Period'), width=250, height=500)
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
-        styled_df = (count_client.rename(columns={'Account Name': 'Client'})
-                    .set_index('Client')
-                    .head(25))
-
-    # Create columns within the DataFrame for width control
-    styled_df['Client'] = styled_df.index
-    styled_df = styled_df[['Client', 'Count']]  # Reorder columns
-    st.dataframe(styled_df, width=400, height=500)  # Adjust overall width if needed
-
-    
+        styled_df = styled_df[['Client', 'Count']]  # Reorder columns
+        st.dataframe(styled_df, width=400, height=500)  # Adjust overall width if needed
     with overview_col4:
         st.subheader("⏳ Closing in 30 Days")
         st.dataframe(count_closing_soon.set_index('Opportunity Name'), width=250, height=500) 
