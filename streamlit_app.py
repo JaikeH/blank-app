@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 from io import BytesIO
 import base64
+import matplotlib
 import matplotlib.pyplot as plt
 from PIL import Image
 
