@@ -6,7 +6,10 @@ from streamlit_plotly_events import plotly_events
 import urllib
 import time
 from datetime import datetime
+from io import BytesIO
 import base64
+import matplotlib.pyplot as plt
+from PIL import Image
 
 # --- Set Streamlit Page Configuration ---
 st.set_page_config(page_title="📈 Enhanced Sales Opportunity Dashboard", layout="wide")
@@ -57,6 +60,21 @@ def load_and_preprocess_data(uploaded_files):
         return None
     return pd.concat(data_frames, ignore_index=True)
 
+# Convert DataFrame to Base64 image
+def dataframe_to_base64_image(df):
+    # Convert DataFrame to an image
+    fig, ax = plt.subplots(figsize=(8, len(df) * 0.25 + 1))  # Adjust height dynamically
+    ax.axis('off')
+    ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
+    buf = BytesIO()
+    fig.savefig(buf, format="PNG")
+    plt.close(fig)
+    
+    # Convert the image to base64
+    buf.seek(0)
+    base64_image = base64.b64encode(buf.read()).decode('utf-8')
+    return base64_image
+    
 # --- Email Body Formatting ---
 def format_salesperson_opportunities_email(filtered_df):
     body = "Here are the current opportunities for the selected salesperson:\n\n"
@@ -68,6 +86,16 @@ def format_salesperson_opportunities_email(filtered_df):
             "------------------------------------------\n"
         )
     return body
+# Generate Mailto link with Base64 image
+def create_outlook_link_with_image(filtered_df):
+    # Convert DataFrame to Base64 image
+    base64_image = dataframe_to_base64_image(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
+    img_tag = f'<img src="data:image/png;base64,{base64_image}">'
+    
+    subject = "Opportunities for Selected Salesperson"
+    body = f"Here is an overview of the selected opportunities:\n\n{img_tag}"
+    mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
+    return mailto_link
 
 # --- Generate Mailto Link for Outlook Email ---
 def create_outlook_link_for_salesperson(filtered_df):
@@ -223,6 +251,10 @@ def render_dashboard(df, metric):
             gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
             AgGrid(filtered_df, gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
+            # Email button with Base64 image
+            st.header("Send Opportunities via Email")
+            outlook_link = create_outlook_link_with_image(filtered_df)
+            st.markdown(f"[Click here to email salesperson's opportunities as an image]({outlook_link})", unsafe_allow_html=True)
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
