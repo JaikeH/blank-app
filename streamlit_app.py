@@ -6,6 +6,7 @@ from streamlit_plotly_events import plotly_events
 import urllib
 import time
 from datetime import datetime
+import base64
 
 # --- Set Streamlit Page Configuration ---
 st.set_page_config(page_title="📈 Enhanced Sales Opportunity Dashboard", layout="wide")
@@ -74,6 +75,14 @@ def create_outlook_link_for_salesperson(filtered_df):
     body = format_salesperson_opportunities_email(filtered_df)
     mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
     return mailto_link
+
+# --- Function to trigger email client directly ---
+def send_email_directly(filtered_df):
+    subject = "Opportunities for Selected Salesperson"
+    body = format_salesperson_opportunities_email(filtered_df)
+    
+    href = f"mailto:?subject={subject}&body={body}" 
+    st.markdown(f'<a href="{href}">Send Email</a>', unsafe_allow_html=True)
 
 # --- Charting Functions ---
 def create_bar_chart(df, x_col, y_col, title, labels, color_col=None, orientation='v'):
@@ -212,9 +221,8 @@ def render_dashboard(df, metric):
             AgGrid(filtered_df, gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
 
             # Email button (only relevant fields in email)
-            st.header("Send Opportunities via Email")
-            outlook_link = create_outlook_link_for_salesperson(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
-            st.markdown(f"[Click here to email salesperson's opportunities]({outlook_link})", unsafe_allow_html=True)
+            st.markdown("### Send Opportunities via Email")
+            send_email_directly(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
