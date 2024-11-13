@@ -134,7 +134,7 @@ def render_dashboard(df, metric):
     st.header("🔍 Opportunities Overview")
     count_salesperson = df.groupby('Opportunity Owner').size().reset_index(name='Count')
     count_fiscal = df.groupby('Fiscal Period').size().reset_index(name='Count')
-    count_client = df.groupby('Account Name').size().reset_index(name='Count')
+    count_client = df.groupby('Account Name').size().reset_index(name='Count').sort_values(by='Count', ascending=False)
 
     # Display top 10 entries for each category
     overview_col1, overview_col2, overview_col3 = st.columns(3)
@@ -146,13 +146,7 @@ def render_dashboard(df, metric):
         st.table(count_fiscal)
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
-        # Display only top 10 and add scrollbar if more
-        if len(count_client) > 10:
-            st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).head(10), height=250)  # Limit rows to 10
-            # Add a message indicating more rows are available
-            st.write(f"Showing top 10 clients. There are {len(count_client) - 10} more clients.")
-        else:
-            st.table(count_client.rename(columns={'Account Name': 'Client'}))
+        st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).head(25), height=500)
 
     st.markdown("---")
 
