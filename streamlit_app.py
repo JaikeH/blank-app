@@ -78,10 +78,12 @@ def create_outlook_link_for_salesperson(filtered_df):
 
 # --- Function to trigger email client directly ---
 def send_email_directly(filtered_df):
-    subject = "Opportunities for Selected Salesperson"
-    body = format_salesperson_opportunities_email(filtered_df)
+    subject = urllib.parse.quote("Opportunities for Selected Salesperson")
+    body = urllib.parse.quote(format_salesperson_opportunities_email(filtered_df))
     
+    # Construct the mailto URL
     href = f"mailto:?subject={subject}&body={body}" 
+
     st.markdown(f'<a href="{href}">Send Email</a>', unsafe_allow_html=True)
 
 # --- Charting Functions ---
