@@ -5,3 +5,4 @@ streamlit-aggrid
 streamlit-plotly-events
 streamlit
 openpyxl
+matplotlib
