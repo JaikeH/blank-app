@@ -140,13 +140,13 @@ def render_dashboard(df, metric):
     overview_col1, overview_col2, overview_col3 = st.columns(3)
     with overview_col1:
         st.subheader("👤 Opportunities by Salesperson")
-        st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'))
+        st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'), width=33%, height=500)
     with overview_col2:
         st.subheader("📅 Opportunities by Fiscal Period")
-        st.dataframe(count_fiscal.set_index('Fiscal Period'))
+        st.dataframe(count_fiscal.set_index('Fiscal Period'), width=33%, height=500)
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
-        st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).set_index('Client').head(25), height=500)
+        st.dataframe(count_client.rename(columns={'Account Name': 'Client'}).set_index('Client').head(25), width=33%, height=500)
 
     st.markdown("---")
 
