@@ -141,11 +141,9 @@ def render_dashboard(df, metric):
     with overview_col1:
         st.subheader("👤 Opportunities by Salesperson")
         st.table(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}))
-
     with overview_col2:
         st.subheader("📅 Opportunities by Fiscal Period")
         st.table(count_fiscal)
-
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
         # Display only top 10 and add scrollbar if more
