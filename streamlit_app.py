@@ -154,6 +154,12 @@ def render_dashboard(df, metric):
     # --- Revenue by Fiscal Period Chart ---
     st.subheader("💰 Revenue by Fiscal Period")
     revenue_fiscal = df.groupby('Fiscal Period')[metric].sum().reset_index()
+    revenue_fiscal['Fiscal Period'] = pd.Categorical(
+        revenue_fiscal['Fiscal Period'],
+        categories=sorted(df['Fiscal Period'].dropna().unique(), key=lambda x: pd.to_datetime(x, errors='ignore')),
+        ordered=True
+    )
+    revenue_fiscal = revenue_fiscal.sort_values('Fiscal Period')
     fig_revenue_fiscal = create_bar_chart(
         revenue_fiscal,
         x_col='Fiscal Period',
@@ -199,16 +205,16 @@ def render_dashboard(df, metric):
         filtered_df = df[df['Opportunity Owner'] == salesperson_name]
 
         if not filtered_df.empty:
-            gb = GridOptionsBuilder.from_dataframe(filtered_df[['Opportunity Name', 'Account Name', 'Close Date']])
+            # Show table with all columns for detailed view
+            gb = GridOptionsBuilder.from_dataframe(filtered_df)
             gb.configure_default_column(editable=False, sortable=True, filter=True)
             gridOptions = gb.build()
-            AgGrid(filtered_df[['Opportunity Name', 'Account Name', 'Close Date']], gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
+            AgGrid(filtered_df, gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
 
-            # Email button
+            # Email button (only relevant fields in email)
             st.header("Send Opportunities via Email")
-            if st.button("Email Salesperson's Opportunities"):
-                outlook_link = create_outlook_link_for_salesperson(filtered_df)
-                st.markdown(f"[Click here to open email in Outlook]({outlook_link})", unsafe_allow_html=True)
+            outlook_link = create_outlook_link_for_salesperson(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
+            st.markdown(f"[Click here to email salesperson's opportunities]({outlook_link})", unsafe_allow_html=True)
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
