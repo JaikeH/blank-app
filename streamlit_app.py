@@ -152,7 +152,7 @@ def render_dashboard(df, metric):
             # Add a message indicating more rows are available
             st.write(f"Showing top 10 clients. There are {len(count_client) - 10} more clients.")
         else:
-        st.table(count_client.rename(columns={'Account Name': 'Client'}))
+            st.table(count_client.rename(columns={'Account Name': 'Client'}))
 
     st.markdown("---")
 
