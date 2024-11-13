@@ -151,7 +151,7 @@ def render_dashboard(df, metric):
     with overview_col3:
         st.subheader("🏢 Opportunities by Client")
         styled_df = styled_df[['Client', 'Count']]  # Reorder columns
-        st.dataframe(styled_df, width=400, height=500)  # Adjust overall width if needed
+        st.dataframe(styled_df, width=300, height=500)  # Adjust overall width if needed
     with overview_col4:
         st.subheader("⏳ Closing in 30 Days")
         st.dataframe(count_closing_soon.set_index('Opportunity Name'), width=250, height=500) 
