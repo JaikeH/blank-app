@@ -156,7 +156,7 @@ def render_dashboard(df, metric):
         st.dataframe(styled_df.style.set_table_styles([
             {'selector': 'th', 'props': [('text-align', 'left')]},
             {'selector': 'td', 'props': [('text-align', 'left')]},
-            {'selector': 'th:first-child', 'props': [('width', '70%')]},  # Adjust width for Client column
+            {'selector': 'th:first-child', 'props': [('width', '150')]},  # Adjust width for Client column
         ]), height=500) 
     
     with overview_col4:
