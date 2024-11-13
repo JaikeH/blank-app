@@ -66,7 +66,7 @@ def dataframe_to_base64_image(df):
     # Convert DataFrame to an image
     fig, ax = plt.subplots(figsize=(8, len(df) * 0.25 + 1))  # Adjust height dynamically
     ax.axis('off')
-    ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
+    ax.table(cellText=df.values, colLabels=df.columns, loc='center')
     buf = BytesIO()
     fig.savefig(buf, format="PNG")
     plt.close(fig)
