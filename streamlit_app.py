@@ -157,7 +157,6 @@ def render_dashboard(df, metric):
             {'selector': 'th', 'props': [('text-align', 'left')]},
             {'selector': 'td', 'props': [('text-align', 'left')]},
             {'selector': 'th:first-child', 'props': [('width', '70%')]},  # Adjust width for Client column
-            {'selector': 'th:last-child', 'props': [('width', '30%')]}   # Adjust width for Count column
         ]), height=500) 
     
     with overview_col4:
