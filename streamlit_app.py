@@ -60,30 +60,6 @@ def load_and_preprocess_data(uploaded_files):
         return None
     return pd.concat(data_frames, ignore_index=True)
 
-# --- Convert DataFrame to Base64 Image ---
-def dataframe_to_base64_image(df):
-    fig, ax = plt.subplots(figsize=(5, len(df) * 0.2 + 0.5))
-    ax.axis('off')
-    ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
-    buf = BytesIO()
-    fig.savefig(buf, format="JPEG", quality=50)  # Use JPEG format with lower quality
-    plt.close(fig)
-
-    buf.seek(0)
-    base64_image = base64.b64encode(buf.read()).decode('utf-8')
-    return base64_image
-
-# --- Generate Mailto Link with Base64 Image ---
-def create_outlook_link_with_image(filtered_df):
-    # Convert DataFrame to Base64 image
-    base64_image = dataframe_to_base64_image(filtered_df[['Account Name', 'Opportunity Name', 'Close Date']])
-    img_tag = f'<img src="data:image/png;base64,{base64_image}">'
-    
-    subject = "Opportunities for Selected Salesperson"
-    body = f"Here is an overview of the selected opportunities:\n\n{img_tag}"
-    mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
-    return mailto_link
-
 # --- Charting Functions ---
 def create_bar_chart(df, x_col, y_col, title, labels, color_col=None, orientation='v'):
     if color_col:
@@ -218,10 +194,6 @@ def render_dashboard(df, metric):
             gridOptions = gb.build()
             AgGrid(filtered_df, gridOptions=gridOptions, height=300, allow_unsafe_jscode=True)
 
-            # Email button with Base64 image
-            st.header("Send Opportunities via Email")
-            outlook_link = create_outlook_link_with_image(filtered_df)
-            st.markdown(f"[Click here to email salesperson's opportunities as an image]({outlook_link})", unsafe_allow_html=True)
         else:
             st.write("No opportunities found for the selected Salesperson.")
     else:
