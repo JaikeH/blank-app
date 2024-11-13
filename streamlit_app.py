@@ -146,20 +146,20 @@ def render_dashboard(df, metric):
     overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
     
     with overview_col1:
-        st.subheader("👤 Opportunities by Salesperson")
+        st.markdown("<h4>👤 Opportunities by Salesperson</h4>", unsafe_allow_html=True)
         st.dataframe(count_salesperson.rename(columns={'Opportunity Owner': 'Salesperson'}).set_index('Salesperson'), width=230, height=500)
 
     with overview_col2:
-        st.subheader("📅 Opportunities by Fiscal Period")
+        st.markdown("<h4>📅 Opportunities by Fiscal Period</h4>", unsafe_allow_html=True)
         st.dataframe(count_fiscal.set_index('Fiscal Period'), width=230, height=500)
 
     with overview_col3:
-        st.subheader("🏢 Opportunities by Client")
+        st.markdown("<h4>🏢 Opportunities by Client</h4>", unsafe_allow_html=True)
         styled_client_df = count_client.rename(columns={'Account Name': 'Client'}).set_index('Client')
         st.dataframe(styled_client_df, width=300, height=500)
 
     with overview_col4:
-        st.subheader("⏳ Closing in 30 Days")
+        st.markdown("<h4>⏳ Closing in 30 Days</h4>", unsafe_allow_html=True)
         st.dataframe(count_closing_soon.set_index('Opportunity Name'), width=230, height=500)
 
     st.markdown("---")
