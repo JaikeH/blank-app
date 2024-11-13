@@ -62,15 +62,13 @@ def load_and_preprocess_data(uploaded_files):
 
 # --- Convert DataFrame to Base64 Image ---
 def dataframe_to_base64_image(df):
-    # Convert DataFrame to an image
-    fig, ax = plt.subplots(figsize=(8, len(df) * 0.25 + 1))  # Adjust height dynamically
+    fig, ax = plt.subplots(figsize=(5, len(df) * 0.2 + 0.5))
     ax.axis('off')
     ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
     buf = BytesIO()
-    fig.savefig(buf, format="PNG")
+    fig.savefig(buf, format="JPEG", quality=50)  # Use JPEG format with lower quality
     plt.close(fig)
-    
-    # Convert the image to base64
+
     buf.seek(0)
     base64_image = base64.b64encode(buf.read()).decode('utf-8')
     return base64_image
